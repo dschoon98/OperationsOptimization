@@ -1,18 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Mon Nov  9 10:47:50 2020
-
-@author: Mitchel
-"""
-
-
-# -*- coding: utf-8 -*-
-"""
-Created on Thu Sep 24 22:22:35 2020
-
-@author: abombelli
-"""
-
 # Loading packages that are used in the code
 import numpy as np
 import os
@@ -25,11 +10,24 @@ from copy import deepcopy
 # Get path to current folder
 cwd = os.getcwd()
 
-###################
-### MODEL SETUP ###
-###################
+# Get all instances
+full_list           = os.listdir(cwd)
 
-# Keep track of start time to compute overall comptuational performance
+# instance name
+instance_name = 'data_example_2.xlsx'
+
+# Load data for this instance
+edges  = pd.read_excel(os.path.join(cwd,instance_name),sheet_name='Airport data')
+
 startTimeSetUp = time.time()
-# Initialize empty model
 model = Model()
+
+#################
+### VARIABLES ###
+#################
+x = {}
+for i in range(0,len(edges)):
+    x[edges['Flight'][i],edges['Gate'][i]]=model.addVar(lb=0, ub=1, vtype=GRB.BINARY,name="x[%s,%s]"%(edges['Flight'][i],edges['Gate'][i]))
+
+            
+model.update()
