@@ -14,7 +14,7 @@ cwd = os.getcwd()
 full_list           = os.listdir(cwd)
 
 # instance name
-instance_name = 'data_example_2.xlsx'
+instance_name = 'dataset.xlsx'
 
 # Load data for this instance
 edges  = pd.read_excel(os.path.join(cwd,instance_name),sheet_name='Python_sheet')
@@ -31,3 +31,15 @@ for i in range(0,len(edges)):
 
             
 model.update()
+
+###################
+### CONSTRAINTS ###
+###################
+
+for i in range(1,edges['Flight'][len(edges)-1]):
+    idx_flight = np.where(edges['Flight']==i)[0]
+    idx_gate  = np.where(edges['Gate']==i)[0]
+    thisLHS = LinExpr()
+    
+    for j in range(0,len(idx_flight)):
+        thisLHS += x[i,edges['Flight'][idx_flight[j]]]
