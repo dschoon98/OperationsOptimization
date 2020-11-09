@@ -1,18 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Mon Nov  9 10:47:50 2020
-
-@author: Mitchel
-"""
-
-
-# -*- coding: utf-8 -*-
-"""
-Created on Thu Sep 24 22:22:35 2020
-
-@author: abombelli
-"""
-
 # Loading packages that are used in the code
 import numpy as np
 import os
@@ -25,11 +10,36 @@ from copy import deepcopy
 # Get path to current folder
 cwd = os.getcwd()
 
+# Get all instances
+full_list           = os.listdir(cwd)
+
+# instance name
+instance_name = 'dataset.xlsx'
+
+# Load data for this instance
+edges  = pd.read_excel(os.path.join(cwd,instance_name),sheet_name='Python_sheet')
+
+startTimeSetUp = time.time()
+model = Model()
+
+#################
+### VARIABLES ###
+#################
+x = {}
+for i in range(0,len(edges)):
+    x[edges['Flight'][i],edges['Gate'][i]]=model.addVar(lb=0, ub=1, vtype=GRB.BINARY,name="x[%s,%s]"%(edges['Flight'][i],edges['Gate'][i]))
+
+            
+model.update()
+
 ###################
-### MODEL SETUP ###
+### CONSTRAINTS ###
 ###################
 
-# Keep track of start time to compute overall comptuational performance
-startTimeSetUp = time.time()
-# Initialize empty model
-model = Model()
+for i in range(1,edges['Flight'][len(edges)-1]):
+    idx_flight = np.where(edges['Flight']==i)[0]
+    idx_gate  = np.where(edges['Gate']==i)[0]
+    thisLHS = LinExpr()
+    
+    for j in range(0,len(idx_flight)):
+        thisLHS += x[i,edges['Flight'][idx_flight[j]]]
