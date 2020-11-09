@@ -24,7 +24,7 @@ full_list           = os.listdir(cwd)
 instance_name = 'data_example_2.xlsx'
 
 # Load data for this instance
-edges  = pd.read_excel(os.path.join(cwd,instance_name),sheet_name='Airport data')
+edges                 = pd.read_excel(os.path.join(cwd,instance_name),sheet_name='Airport data')
 
 startTimeSetUp = time.time()
 model = Model()
