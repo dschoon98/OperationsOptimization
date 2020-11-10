@@ -28,7 +28,7 @@ model = Model()
 #################
 x = {}
 for i in range(0,len(edges)):
-    x[edges['Flight'][i],edges['Gate'][i]]=model.addVar(lb=0, ub=1, vtype=GRB.BINARY,name="x[%s,%s]"%(edges['Flight'][i],edges['Gate'][i]))
+    x[edges['Flight'][i],edges['Gate'][i]]=model.addVar(lb=0, ub=1, vtype=GRB.BINARY,name="x%s%s"%(edges['Flight'][i],edges['Gate'][i]))
 
             
 model.update()
@@ -65,7 +65,7 @@ for k in range(1,edges['Timeslot'][len(edges)-1]+1):
 
             gateLHS += a*x[edges['Flight'][idx_gate[j]],i]   #x11 + x21 + x31 + x41 ... + x34 + x44 i=flight, j=gate
             #print(edges['a_it'][idx_gate[j]])
-        model.addConstr(lhs=gateLHS, sense=GRB.LESS_EQUAL, rhs=1, name='Gate_'+str(i))
+        model.addConstr(lhs=gateLHS, sense=GRB.LESS_EQUAL, rhs=1, name='Gate_'+str(i)+'T_'+str(k))
         #print(gateLHS)
             
 
