@@ -39,8 +39,8 @@ model.update()
 
 for i in range(1,edges['Flight'][len(edges)-1]+1): #Looping over all flights
     idx_flight = np.where((edges['Flight']==i) & (edges['Timeslot']==1))[0]
-    print(idx_flight)
-    
+    # print(idx_flight)
+    idx_compat = npwhere.
     flightLHS = LinExpr()
       
     for j in range(0,len(idx_flight)):
@@ -69,7 +69,7 @@ for k in range(1,edges['Timeslot'][len(edges)-1]+1):
         #print(gateLHS)
             
 
-
+b = edges['Gate_compatibility'][]
 obj        = LinExpr() 
 
 for i in range(0,len(edges)):
