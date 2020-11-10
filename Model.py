@@ -38,8 +38,8 @@ model.update()
 ###################
 
 for i in range(1,edges['Flight'][len(edges)-1]+1): #Looping over all flights
-    idx_flight = np.where(edges['Flight']==i)[0]
-    #print(idx_flight)
+    idx_flight = np.where((edges['Flight']==i) & (edges['Timeslot']==1))[0]
+    print(idx_flight)
     
     flightLHS = LinExpr()
       
@@ -47,22 +47,27 @@ for i in range(1,edges['Flight'][len(edges)-1]+1): #Looping over all flights
         #print(idx_flight[j])
         #print(edges['Flight'][idx_flight[j]])
         flightLHS += x[i,edges['Gate'][idx_flight[j]]]  #x11 + x12 + x13 + x14 ... + x43 + x44 i=flight, j=gate      
-
-    print(flightLHS)
+        
+    #print(flightLHS)
     model.addConstr(lhs=flightLHS, sense=GRB.EQUAL, rhs=1, name='Flight_'+str(i))
     
 
+for k in range(1,edges['Timeslot'][len(edges)-1]+1):    
+    idx_timeslot = np.where(edges['Timeslot']==k)[0]
+    #print(idx_timeslot)
 
-for i in range(1,edges['Gate'][len(edges)-1]+1): #Looping over all gates
-    idx_gate  = np.where(edges['Gate']==i)[0]
-    gateLHS = LinExpr()
-    
-    for j in range(0,len(idx_gate)):
-        gateLHS += x[edges['Flight'][idx_gate[j]],i]   #x11 + x21 + x31 + x41 ... + x34 + x44 i=flight, j=gate
-        
-    model.addConstr(lhs=gateLHS, sense=GRB.LESS_EQUAL, rhs=1, name='Gate_'+str(i))
-    print(gateLHS)
-        
+    for i in range(1,edges['Gate'][len(edges)-1]+1): #Looping over all gates
+        idx_gate  = np.where((edges['Gate']==i) & (edges['Timeslot']==k))[0]
+        #print(idx_gate)
+        gateLHS = LinExpr()
+        for j in range(0,len(idx_gate)):
+            a = edges['a_it'][idx_gate[j]]
+
+            gateLHS += a*x[edges['Flight'][idx_gate[j]],i]   #x11 + x21 + x31 + x41 ... + x34 + x44 i=flight, j=gate
+            #print(edges['a_it'][idx_gate[j]])
+        model.addConstr(lhs=gateLHS, sense=GRB.LESS_EQUAL, rhs=1, name='Gate_'+str(i))
+        #print(gateLHS)
+            
 
 
 obj        = LinExpr() 
