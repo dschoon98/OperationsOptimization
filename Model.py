@@ -36,15 +36,15 @@ model.update()
 ### CONSTRAINTS ###
 ###################
 
-for i in range(1,edges['Flight'][len(edges)-1]): #Looping over all flights
+for i in range(1,edges['Flight'][len(edges)-1]+1): #Looping over all flights
     idx_flight = np.where(edges['Flight']==i)[0]
-    print(idx_flight)
+    #print(idx_flight)
     
     flightLHS = LinExpr()
       
     for j in range(0,len(idx_flight)):
-        print(idx_flight[j])
-        print(edges['Flight'][idx_flight[j]])
+        #print(idx_flight[j])
+        #print(edges['Flight'][idx_flight[j]])
         flightLHS += x[i,edges['Gate'][idx_flight[j]]]  #x11 + x12 + x13 + x14 ... + x43 + x44 i=flight, j=gate      
 
     print(flightLHS)
@@ -52,8 +52,7 @@ for i in range(1,edges['Flight'][len(edges)-1]): #Looping over all flights
     
 
 
-
-for i in range(1,edges['Gate'][len(edges)-1]): #looping over all gates
+for i in range(1,edges['Gate'][len(edges)-1]+1): #Looping over all gates
     idx_gate  = np.where(edges['Gate']==i)[0]
     gateLHS = LinExpr()
     
