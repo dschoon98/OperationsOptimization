@@ -17,7 +17,7 @@ full_list           = os.listdir(cwd)
 instance_name = 'dataset.xlsx'
 
 # Load data for this instance
-edges  = pd.read_excel(os.path.join(cwd,instance_name),sheet_name='Python_sheet')
+edges  = pd.read_excel(os.path.join(cwd,instance_name),sheet_name='Blad1')
 
 startTimeSetUp = time.time()
 model = Model()
@@ -36,10 +36,48 @@ model.update()
 ### CONSTRAINTS ###
 ###################
 
-for i in range(1,edges['Flight'][len(edges)-1]):
+for i in range(1,edges['Flight'][len(edges)-9]+1):
     idx_flight = np.where(edges['Flight']==i)[0]
+    print(idx_flight)
     idx_gate  = np.where(edges['Gate']==i)[0]
-    thisLHS = LinExpr()
-    
+    flightLHS = LinExpr()
+    gateLHS = LinExpr()    
     for j in range(0,len(idx_flight)):
-        thisLHS += x[i,edges['Flight'][idx_flight[j]]]
+        print(idx_flight[j])
+        print(edges['Flight'][idx_flight[j]])
+        flightLHS += x[i,edges['Gate'][idx_flight[j]]]  #x11 + x12 + x13 + x14 ... + x43 + x44 i=flight, j=gate
+        
+        gateLHS += x[edges['Flight'][idx_gate[j]],i]   #x11 + x21 + x31 + x41 ... + x34 + x44 i=flight, j=gate
+
+    print(flightLHS)
+    print(gateLHS)
+    model.addConstr(lhs=flightLHS, sense=GRB.EQUAL, rhs=1, name='Flight_'+str(i))
+    model.addConstr(lhs=gateLHS, sense=GRB.LESS_EQUAL, rhs=1, name='Gate_'+str(i))
+model.update()
+        
+        
+obj        = LinExpr() 
+
+for i in range(0,len(edges)):
+    obj += edges['Cost'][i]*x[edges['Flight'][i],edges['Gate'][i]]
+
+
+model.setObjective(obj,GRB.MINIMIZE)
+model.update()
+model.write('model_formulation.lp')    
+
+model.optimize()
+endTime   = time.time()
+
+        
+        
+    #     for i in range(1,edges['Flight'][len(edges)-1]):
+    # idx_flight = np.where(edges['Flight']==i)[0]
+    # idx_gate  = np.where(edges['Gate']==i)[0]
+    # thisLHS = LinExpr()
+        
+    
+    
+    
+    # for j in range(0,len(idx_flight)):
+    #     thisLHS += x[i,edges['Flight'][idx_flight[j]]]
