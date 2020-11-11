@@ -28,6 +28,8 @@ edges  = pd.read_excel(os.path.join(cwd,instance_name),sheet_name='Model')
 # print(gate)
 # gate = np.array(gate)
 # gate = gate.reshape(((len(edges)-1),1))
+
+
 #################
 ### VARIABLES ###
 #################
@@ -42,6 +44,22 @@ model.update()
 ### CONSTRAINTS ###
 ###################
 
+
+######### Creating Timeslots ##########
+
+# Timeslots = list(range(1, len(edges)))
+# present_aircraft =[]
+
+# for i in range(1, len(edges)):
+#     Check_dep = list(map(int,edges['arr_time'][i]<edges['dep_time']))
+#     Check_arr = list(map(int,edges['arr_time'][i]>=edges['arr_time']))
+#     Check_timeslot = np.array(Check_arr)*np.array(Check_dep)
+#     present_aircraft.append(Check_timeslot)
+
+
+
+########### Creating Flight Constraints ################
+
 for i in range(1,edges['Flight'][len(edges)-1]+1): #Looping over all flights
     idx_flight = np.where((edges['Flight']==i) & (edges['Timeslot']==1))[0]
     # print(idx_flight)
@@ -55,19 +73,11 @@ for i in range(1,edges['Flight'][len(edges)-1]+1): #Looping over all flights
     #print(flightLHS)
     model.addConstr(lhs=flightLHS, sense=GRB.EQUAL, rhs=1, name='Flight_'+str(i))
     
-# Load data for this instance
     
-# #Trying to write timeslot stuff     
-# pipo  = pd.read_excel(os.path.join(cwd,instance_name),sheet_name='Blad3')
-# for i in pipo['arr_time']:
-#     a = str(i)
-#     minutes = int(a[3])*10+int(a[4]) # = e.g. 15 in 09:15
-#     hours = int(a[0])*10+int(a[1])   # = e.g. 9 in 09:15
-#     print(minutes)
-#     print(hours)
+    
     
 
-
+########### Creating Gate Constraints ################
 
 for k in range(1,edges['Timeslot'][len(edges)-1]+1):    #Looping over timeslots
     idx_timeslot = np.where(edges['Timeslot']==k)[0]
