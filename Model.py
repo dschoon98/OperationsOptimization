@@ -1,5 +1,6 @@
 #fhajkgibfdjan
 # Loading packages that are used in the code
+n = 5
 import numpy as np
 import os
 import pandas as pd
@@ -16,13 +17,17 @@ full_list           = os.listdir(cwd)
 
 # instance name
 instance_name = 'dataset.xlsx'
-
-# Load data for this instance
-edges  = pd.read_excel(os.path.join(cwd,instance_name),sheet_name='Blad1')
-
 startTimeSetUp = time.time()
 model = Model()
-
+# Load data for this instance
+edges  = pd.read_excel(os.path.join(cwd,instance_name),sheet_name='Model')
+# gate = []
+# for i in range(1,n+1):
+#     gate.append(i)
+# gate *= edges['Flight'][len(edges)-1]
+# print(gate)
+# gate = np.array(gate)
+# gate = gate.reshape(((len(edges)-1),1))
 #################
 ### VARIABLES ###
 #################
@@ -50,8 +55,21 @@ for i in range(1,edges['Flight'][len(edges)-1]+1): #Looping over all flights
     #print(flightLHS)
     model.addConstr(lhs=flightLHS, sense=GRB.EQUAL, rhs=1, name='Flight_'+str(i))
     
+# Load data for this instance
+    
+# #Trying to write timeslot stuff     
+# pipo  = pd.read_excel(os.path.join(cwd,instance_name),sheet_name='Blad3')
+# for i in pipo['arr_time']:
+#     a = str(i)
+#     minutes = int(a[3])*10+int(a[4]) # = e.g. 15 in 09:15
+#     hours = int(a[0])*10+int(a[1])   # = e.g. 9 in 09:15
+#     print(minutes)
+#     print(hours)
+    
 
-for k in range(1,edges['Timeslot'][len(edges)-1]+1):    
+
+
+for k in range(1,edges['Timeslot'][len(edges)-1]+1):    #Looping over timeslots
     idx_timeslot = np.where(edges['Timeslot']==k)[0]
     #print(idx_timeslot)
 
