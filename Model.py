@@ -89,7 +89,7 @@ for k in range(1,edges['Timeslot'][len(edges)-1]+1):    #Looping over timeslots
             
 
 
-obj        = LinExpr() 
+obj = LinExpr() 
 for i in range(0,len(x)):
     obj += edges['Cost'][i]*x[edges['Flight'][i],edges['Gate'][i]]
 
