@@ -1,6 +1,6 @@
 #fhajkgibfdjan
 # Loading packages that are used in the code
-n = 5  # number of gates
+
 import numpy as np
 import os
 import pandas as pd
@@ -33,6 +33,7 @@ edges  = pd.read_excel(os.path.join(cwd,instance_name),sheet_name='new_dataset')
 #################
 ### VARIABLES ###
 #################
+
 x = {}
 for i in range(0,len(edges)):
     x[edges['Flight'][i],edges['Gate'][i]]=model.addVar(lb=0, ub=1, vtype=GRB.BINARY,name="x%s%s"%(edges['Flight'][i],edges['Gate'][i]))
