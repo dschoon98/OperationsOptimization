@@ -1,6 +1,6 @@
 #fhajkgibfdjan
 # Loading packages that are used in the code
-n = 5
+n = 5  # number of gates
 import numpy as np
 import os
 import pandas as pd
