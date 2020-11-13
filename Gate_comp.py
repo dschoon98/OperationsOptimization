@@ -18,7 +18,7 @@ edges  = pd.read_excel(os.path.join(cwd,instance_name),sheet_name='new_format')
 
 
 
-########## Creating Gate Compatability Matrix ##############
+########## Creating Gate Compatability and Cost Matrix ##############
 n_gates = 4
 gate_comp = np.zeros((len(edges), n_gates))
 cost = np.zeros((len(edges), n_gates))
