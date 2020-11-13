@@ -34,10 +34,19 @@ edges  = pd.read_excel(os.path.join(cwd,instance_name),sheet_name='Sheet2')
 ### VARIABLES ###
 #################
 
-x = {}
-for i in range(0,len(edges)):
-    x[edges['Flight'][i],edges['Gate'][i]]=model.addVar(lb=0, ub=1, vtype=GRB.BINARY,name="x%s%s"%(edges['Flight'][i],edges['Gate'][i]))
+n_gates = 5
 
+x = {}
+for i in range(len(edges)):
+    for j in range(n_gates):
+        x[i+1,j+1]=model.addVar(lb=0, ub=1, vtype=GRB.BINARY,name="x%s%s"%(i+1,j+1))
+        
+t = {}        
+for i in range(1, len(edges)+1):
+    for j in range(1, n_gates+1):
+        for i_p in range(1, len(edges)+1):
+            for j_p in range(1, n_gates+1):
+                t[i,j,i_p,j_p] = model.addVar(lb=0, ub=1, vtype=GRB.BINARY,name="t%s%s%s%s"%(i,j,i_p,j_p))
             
 model.update()
 
@@ -56,53 +65,52 @@ for i in range(0, len(edges)):
     Check_arr = list(map(int,edges['arr_time'][i]>=edges['arr_time']))
     Check_timeslot = np.array(Check_arr)*np.array(Check_dep)
     present_aircraft.append(Check_timeslot)
+    
+    
+########## Creating Gate Compatability and Cost Matrix ##############
 
+gate_comp = np.zeros((len(edges), n_gates))
+distance = np.zeros((len(edges), n_gates))
 
-
-########### Creating Flight Constraints ################
-
-for i in range(1,edges['Flight'][len(edges)-1]+1): #Looping over all flights
-    idx_flight = np.where(edges['Flight']==i)[0] 
-    # print(idx_flight)
-    flightLHS = LinExpr()
-    for j in range(0,len(idx_flight)):
-        b = edges['Gate_com'][idx_flight[j]]
-        #print(idx_flight[j])
-        #print(edges['Flight'][idx_flight[j]])
-        flightLHS += b*x[i,edges['Gate'][idx_flight[j]]]  #x11 + x12 + x13 + x14 ... + x43 + x44 i=flight, j=gate      
+for i in range(0, len(edges)):
+    for j in range(0, n_gates):
+        distance[i][j] = edges["Gate %s"%(j+1)][i]
+        if edges["Gate %s"%(j+1)][i] != 0:
+            gate_comp[i][j] = 1
         
-    #print(flightLHS)
-    model.addConstr(lhs=flightLHS, sense=GRB.EQUAL, rhs=1, name='Flight_'+str(i))
-    
-    
+
+
+
+########### Creating Flight Constraints #########################
+
+for i in range(len(edges)):
+    flightLHS = LinExpr()
+    for j in range(n_gates):
+        flightLHS += gate_comp[i][j]*x[i+1,j+1]
+    model.addConstr(lhs=flightLHS, sense=GRB.EQUAL, rhs=1, name='Flight_'+str(i+1))
+
     
     
 
 ########### Creating Gate Constraints ################
 
-for k in range(1,len(Timeslots)):    #Looping over timeslots
-    #idx_timeslot = np.where(edges['Timeslot']==k)[0]
-    #print(idx_timeslot)
-    for i in range(1,edges['Gate'][len(edges)-1]+1): #Looping over all gates
-        idx_gate  = np.where(edges['Gate']==i)[0]
-        
-
-        #print(idx_gate)
+for k in range(len(present_aircraft)):
+    for j in range(n_gates):
         gateLHS = LinExpr()
-        for j in range(0,len(idx_gate)):
-            #a = edges['a_it'][idx_gate[j]]
-            a = present_aircraft[k][idx_gate[j]]
-            b = edges['Gate_com'][idx_gate[j]]
-            gateLHS += a * b * x[edges['Flight'][idx_gate[j]],i]   #x11 + x21 + x31 + x41 ... + x34 + x44 i=flight, j=gate
-            #print(edges['a_it'][idx_gate[j]])
-        model.addConstr(lhs=gateLHS, sense=GRB.LESS_EQUAL, rhs=1, name='Gate_'+str(i)+'T_'+str(k))
-        #print(gateLHS)
+        for i in range(len(edges)):
+            gateLHS += gate_comp[i][j]*present_aircraft[k][i]*x[i+1, j+1]
+        model.addConstr(lhs=gateLHS, sense=GRB.LESS_EQUAL, rhs=1, name='Gate_'+str(j+1)+'T_'+str(k+1))
+        
+        
+########### Creating Transfer Contraints ##############
             
-
+        
+########## Objective Function ###################
 
 obj = LinExpr() 
-for i in range(0,len(x)):
-    obj += edges['Cost'][i]*x[edges['Flight'][i],edges['Gate'][i]]
+for i in range(len(edges)):
+    for j in range(n_gates):
+        obj += distance[i][j]*edges["Passengers"][i]*x[i+1, j+1]
 
 
 model.update()
