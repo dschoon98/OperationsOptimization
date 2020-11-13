@@ -20,7 +20,7 @@ instance_name = 'dataset.xlsx'
 startTimeSetUp = time.time()
 model = Model()
 # Load data for this instance
-edges  = pd.read_excel(os.path.join(cwd,instance_name),sheet_name='new_dataset')
+edges  = pd.read_excel(os.path.join(cwd,instance_name),sheet_name='Sheet2')
 # gate = []
 # for i in range(1,n+1):
 #     gate.append(i)
