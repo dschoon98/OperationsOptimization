@@ -77,9 +77,13 @@ for i in range(0, len(edges)):
         distance[i][j] = edges["Gate %s"%(j+1)][i]
         if edges["Gate %s"%(j+1)][i] != 0:
             gate_comp[i][j] = 1
+            
+ ##############  Creating transfer matrix    #####################       
         
-
-
+Transfers = np.zeros((len(edges), len(edges)))
+for i in range(len(edges)):
+    for j in range(len(edges)):
+        Transfers[i][j] = edges["Flight %s"%(j+1)][i]
 
 ########### Creating Flight Constraints #########################
 
@@ -103,14 +107,25 @@ for k in range(len(present_aircraft)):
         
         
 ########### Creating Transfer Contraints ##############
-            
+ 
+for i in range(1, len(edges)+1):
+    for j in range(1, n_gates+1):
+        for i_p in range(1, len(edges)+1):
+            for j_p in range(1, n_gates+1):
+                transLHS = LinExpr()
+                transLHS = x[i,j] + x[i_p,j_p] - t[i,j,i_p,j_p]
+                model.addConstr(lhs=transLHS, sense=GRB.LESS_EQUAL, rhs=1, name='Trans_'+str(i)+str(j)+str(i_p)+str(j_p))
+           
         
 ########## Objective Function ###################
 
 obj = LinExpr() 
-for i in range(len(edges)):
-    for j in range(n_gates):
-        obj += distance[i][j]*edges["Passengers"][i]*x[i+1, j+1]
+for i in range(1, len(edges)+1):
+    for j in range(1, n_gates+1):
+        #obj += distance[i-1][j-1]*edges["Passengers"][i-1]*x[i, j]
+        for i_p in range(1, len(edges)+1):
+            for j_p in range(1, n_gates+1):
+                 obj += Transfers[i-1][i_p-1] * (max(distance[:,j-1]) + max(distance[:,j_p-1])) * t[i,j,i_p,j_p]
 
 
 model.update()
