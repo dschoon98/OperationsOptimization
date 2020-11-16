@@ -8,7 +8,7 @@ import time
 from gurobipy import Model,GRB,LinExpr
 import pickle
 from copy import deepcopy
-
+import datetime 
 # Get path to current folder
 cwd = os.getcwd()
 
@@ -20,7 +20,7 @@ instance_name = 'dataset.xlsx'
 startTimeSetUp = time.time()
 model = Model()
 # Load data for this instance
-edges  = pd.read_excel(os.path.join(cwd,instance_name),sheet_name='new_dataset')
+edges  = pd.read_excel(os.path.join(cwd,instance_name),sheet_name='Sheet2')
 # gate = []
 # for i in range(1,n+1):
 #     gate.append(i)
@@ -54,19 +54,33 @@ model.update()
 ### CONSTRAINTS ###
 ###################
 
-
 ######### Creating Timeslots ##########
 
 Timeslots = list(range(1, len(edges)))
 present_aircraft =[]
-
+delta_t = 15
+dprt_lst = []
+arr_lst = []
 for i in range(0, len(edges)):
+    
+    
     Check_dep = list(map(int,edges['arr_time'][i]<edges['dep_time']))
     Check_arr = list(map(int,edges['arr_time'][i]>=edges['arr_time']))
     Check_timeslot = np.array(Check_arr)*np.array(Check_dep)
     present_aircraft.append(Check_timeslot)
     
-    
+    dummy_date = datetime.date(1, 1, 1)
+    arrival = datetime.datetime.combine(dummy_date, edges['arr_time'][i])
+    added_arrival = arrival + datetime.timedelta(minutes=delta_t)
+    arr_lst.append(added_arrival)
+    departure = datetime.datetime.combine(dummy_date,edges['dep_time'][i])
+    added_departure = departure + datetime.timedelta(minutes=delta_t)
+    dprt_lst.append(added_departure)
+for j in dprt_lst:
+    for i in arr_lst:
+        if i<j:
+            print(i)
+
 ########## Creating Gate Compatability and Cost Matrix ##############
 
 gate_comp = np.zeros((len(edges), n_gates))
