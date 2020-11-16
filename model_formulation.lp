@@ -942,6 +942,11 @@ Subject To
  Trans_6563: x63 + x65 - t6563 <= 1
  Trans_6564: x64 + x65 - t6564 <= 1
  Trans_6565: 2 x65 - t6565 <= 1
+ GateUsed_1: x11 + x21 + x31 + x41 + x51 + x61 - 5 g1 <= 0
+ GateUsed_2: x12 + x22 + x32 + x42 + x52 + x62 - 5 g2 <= 0
+ GateUsed_3: x13 + x23 + x33 + x43 + x53 + x63 - 5 g3 <= 0
+ GateUsed_4: x14 + x24 + x34 + x44 + x54 + x64 - 5 g4 <= 0
+ GateUsed_5: x15 + x25 + x35 + x45 + x55 + x65 - 5 g5 <= 0
 Bounds
 Binaries
  x11 x12 x13 x14 x15 x21 x22 x23 x24 x25 x31 x32 x33 x34 x35 x41 x42 x43
@@ -1020,5 +1025,5 @@ Binaries
  t6442 t6443 t6444 t6445 t6451 t6452 t6453 t6454 t6455 t6461 t6462 t6463
  t6464 t6465 t6511 t6512 t6513 t6514 t6515 t6521 t6522 t6523 t6524 t6525
  t6531 t6532 t6533 t6534 t6535 t6541 t6542 t6543 t6544 t6545 t6551 t6552
- t6553 t6554 t6555 t6561 t6562 t6563 t6564 t6565
+ t6553 t6554 t6555 t6561 t6562 t6563 t6564 t6565 g1 g2 g3 g4 g5
 End

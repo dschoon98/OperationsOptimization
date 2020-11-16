@@ -22,16 +22,16 @@ startTimeSetUp = time.time()
 model = Model()
 
 # Load data for this instance
-edges  = pd.read_excel(os.path.join(cwd,instance_name),sheet_name='Sheet2')
+edges  = pd.read_excel(os.path.join(cwd,instance_name),sheet_name='Flights')
+gate_data = pd.read_excel(os.path.join(cwd,instance_name),sheet_name='Gates')
 
 #################
 ### VARIABLES ###
 #################
 
 
-n_gates = 5 #number of gates
+n_gates = len(gate_data['Gates']) #number of gates
 buffer_time = 0 #min
-
 
 
 x = {}
@@ -45,6 +45,10 @@ for i in range(1, len(edges)+1):
         for i_p in range(1, len(edges)+1):
             for j_p in range(1, n_gates+1):
                 t[i,j,i_p,j_p] = model.addVar(lb=0, ub=1, vtype=GRB.BINARY,name="t%s%s%s%s"%(i,j,i_p,j_p))
+
+g = {} 
+for j in range(n_gates):
+    g[j+1] = model.addVar(lb=0, ub=1, vtype=GRB.BINARY,name="g%s"%(j+1))    
             
 model.update()
 
@@ -135,6 +139,15 @@ for i in range(1, len(edges)+1):
                 transLHS = x[i,j] + x[i_p,j_p] - t[i,j,i_p,j_p]
                 model.addConstr(lhs=transLHS, sense=GRB.LESS_EQUAL, rhs=1, name='Trans_'+str(i)+str(j)+str(i_p)+str(j_p))
            
+########### Minimizing number of gates used #####################
+for j in range(n_gates):
+    mingateLHS = LinExpr()
+    for i in range(len(edges)):
+        mingateLHS += x[i+1,j+1]
+    mingateLHS += -n_gates*g[j+1]
+    model.addConstr(lhs=mingateLHS, sense=GRB.LESS_EQUAL, rhs=0, name='GateUsed_'+str(j+1))
+
+
         
 ########## Objective Function ###################
 
