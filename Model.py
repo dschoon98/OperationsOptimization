@@ -8,6 +8,7 @@ import time
 from gurobipy import Model,GRB,LinExpr
 import pickle
 from copy import deepcopy
+import datetime
 
 # Get path to current folder
 cwd = os.getcwd()
@@ -19,22 +20,19 @@ full_list           = os.listdir(cwd)
 instance_name = 'dataset.xlsx'
 startTimeSetUp = time.time()
 model = Model()
-# Load data for this instance
-edges  = pd.read_excel(os.path.join(cwd,instance_name),sheet_name='new_dataset')
-# gate = []
-# for i in range(1,n+1):
-#     gate.append(i)
-# gate *= edges['Flight'][len(edges)-1]
-# print(gate)
-# gate = np.array(gate)
-# gate = gate.reshape(((len(edges)-1),1))
 
+# Load data for this instance
+edges  = pd.read_excel(os.path.join(cwd,instance_name),sheet_name='Sheet2')
 
 #################
 ### VARIABLES ###
 #################
 
-n_gates = 5
+
+n_gates = 5 #number of gates
+buffer_time = 0 #min
+
+
 
 x = {}
 for i in range(len(edges)):
@@ -59,12 +57,31 @@ model.update()
 
 Timeslots = list(range(1, len(edges)))
 present_aircraft =[]
+arr_time = edges['arr_time']
+dep_time = edges['dep_time']
+
+for i in range(len(edges)):
+    arr = arr_time[i]
+    if arr.minute-buffer_time < 0:
+        arr = arr.replace(arr.hour -1, arr.minute-buffer_time+60)
+    else:
+        arr = arr.replace(arr.hour, arr.minute-buffer_time)
+    arr_time[i] = arr
+    
+    dep = dep_time[i]
+    if dep.minute+buffer_time > 59:
+        dep = dep.replace(dep.hour +1, dep.minute+buffer_time-60)
+    else:
+        dep = dep.replace(dep.hour, dep.minute+buffer_time)
+    dep_time[i] = dep
+
 
 for i in range(0, len(edges)):
-    Check_dep = list(map(int,edges['arr_time'][i]<edges['dep_time']))
-    Check_arr = list(map(int,edges['arr_time'][i]>=edges['arr_time']))
+    Check_dep = list(map(int,arr_time[i]<dep_time))
+    Check_arr = list(map(int,arr_time[i]>=arr_time))
     Check_timeslot = np.array(Check_arr)*np.array(Check_dep)
     present_aircraft.append(Check_timeslot)
+    
     
     
 ########## Creating Gate Compatability and Cost Matrix ##############

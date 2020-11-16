@@ -32,11 +32,11 @@ Subject To
  Gate_3T_4: x23 + x43 <= 1
  Gate_4T_4: x34 <= 1
  Gate_5T_4: x25 + x35 + x45 <= 1
- Gate_1T_5: x41 + x51 <= 1
- Gate_2T_5: x42 + x52 <= 1
+ Gate_1T_5: x31 + x41 + x51 <= 1
+ Gate_2T_5: x32 + x42 + x52 <= 1
  Gate_3T_5: x43 <= 1
- Gate_4T_5: x54 <= 1
- Gate_5T_5: x45 <= 1
+ Gate_4T_5: x34 + x54 <= 1
+ Gate_5T_5: x35 + x45 <= 1
  Gate_1T_6: x61 <= 1
  Gate_2T_6: <= 1
  Gate_3T_6: x63 <= 1
