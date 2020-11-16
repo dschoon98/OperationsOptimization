@@ -152,13 +152,14 @@ for j in range(n_gates):
 ########## Objective Function ###################
 
 obj = LinExpr() 
-for i in range(1, len(edges)+1):
-    for j in range(1, n_gates+1):
-        #obj += distance[i-1][j-1]*edges["Passengers"][i-1]*x[i, j]
+for j in range(1, n_gates+1):
+    obj += gate_data['gate_cost'][j-1] * g[j]
+    for i in range(1, len(edges)+1):
+        obj += distance[i-1][j-1]*edges["Passengers"][i-1]*x[i, j] #minimize total walking distance
         for i_p in range(1, len(edges)+1):
             for j_p in range(1, n_gates+1):
-                 obj += Transfers[i-1][i_p-1] * (max(distance[:,j-1]) + max(distance[:,j_p-1])) * t[i,j,i_p,j_p]
-
+                #minimize transfer distance
+                 obj += Transfers[i-1][i_p-1] * (max(distance[:,j-1]) + max(distance[:,j_p-1])) * t[i,j,i_p,j_p]  #minimize transfer distance
 
 model.update()
 model.setObjective(obj,GRB.MINIMIZE)
