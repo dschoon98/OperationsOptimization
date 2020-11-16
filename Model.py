@@ -33,11 +33,14 @@ n_gates = 5 #number of gates
 buffer_time = 0 #min
 
 
-
+n_towes = 2
 x = {}
-for i in range(len(edges)):
-    for j in range(n_gates):
-        x[i+1,j+1]=model.addVar(lb=0, ub=1, vtype=GRB.BINARY,name="x%s%s"%(i+1,j+1))
+y = {}
+for i in range(1,len(edges)+1):
+    for k in range(n_towes+1):
+        y[i,k] = model.addVar(lb=0, ub=1, vtype=GRB.BINARY, name="y%s%s"%(i,k))
+    for j in range(1,n_gates+1):
+        x[i,j]=model.addVar(lb=0, ub=1, vtype=GRB.BINARY,name="x%s%s"%(i,j))
         
 t = {}        
 for i in range(1, len(edges)+1):
@@ -45,9 +48,20 @@ for i in range(1, len(edges)+1):
         for i_p in range(1, len(edges)+1):
             for j_p in range(1, n_gates+1):
                 t[i,j,i_p,j_p] = model.addVar(lb=0, ub=1, vtype=GRB.BINARY,name="t%s%s%s%s"%(i,j,i_p,j_p))
-            
-model.update()
 
+
+    
+model.update()
+#### d = x_{i,j,k,l}
+
+for i in range(1,len(edges)+1):
+    for j in range(1,n_gates+1):
+            for k in range(n_towes+1):
+
+            for l in range(k+1):
+                x[i,j,k,l] = model.addVar(lb=0, ub=1, vtype=GRB.BINARY, name="x%s%s%s%s"%(i,j,k,l))
+            
+    
 ###################
 ### CONSTRAINTS ###
 ###################
@@ -135,6 +149,16 @@ for i in range(1, len(edges)+1):
                 transLHS = x[i,j] + x[i_p,j_p] - t[i,j,i_p,j_p]
                 model.addConstr(lhs=transLHS, sense=GRB.LESS_EQUAL, rhs=1, name='Trans_'+str(i)+str(j)+str(i_p)+str(j_p))
            
+############ CREATING TOWING CONSTRAINTS ########
+for i in range(1,len(edges)+1):
+    k=edges['#Towes'][i]
+    for j in range(1,n_gates+1):
+        for l in range(k+1):
+            towLHS = LinExpr()
+            towLHS = d[i,j,k,l] - y[i,k]
+            model.addConstr(lhs=towLHS, sense=GRB.EQUAL,rhs=0,name='Tow'+str(i,j,k,l))
+
+
         
 ########## Objective Function ###################
 
