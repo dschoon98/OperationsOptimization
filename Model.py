@@ -22,25 +22,28 @@ startTimeSetUp = time.time()
 model = Model()
 
 # Load data for this instance
-edges  = pd.read_excel(os.path.join(cwd,instance_name),sheet_name='Sheet2')
+edges  = pd.read_excel(os.path.join(cwd,instance_name),sheet_name='Flights')
+gate_data = pd.read_excel(os.path.join(cwd,instance_name),sheet_name='Gates')
 
 #################
 ### VARIABLES ###
 #################
 
 
-n_gates = 5 #number of gates
+n_gates = len(gate_data['Gates']) #number of gates
+n_towes = 2
 buffer_time = 0 #min
 
 
-n_towes = 2
 x = {}
 y = {}
-for i in range(1,len(edges)+1):
-    for k in range(n_towes+1):
+for i in range(len(edges)+1):
+    for k in range(n_towes +1):
         y[i,k] = model.addVar(lb=0, ub=1, vtype=GRB.BINARY, name="y%s%s"%(i,k))
-    for j in range(1,n_gates+1):
-        x[i,j]=model.addVar(lb=0, ub=1, vtype=GRB.BINARY,name="x%s%s"%(i,j))
+    for j in range(n_gates+1):
+        for k in range(n_towes +1):
+            for l in range(k+1):
+                x[i,j,k,l]=model.addVar(lb=0, ub=1, vtype=GRB.BINARY,name="x%s%s%s%s"%(i,j,k,l))
         
 t = {}        
 for i in range(1, len(edges)+1):
@@ -49,19 +52,16 @@ for i in range(1, len(edges)+1):
             for j_p in range(1, n_gates+1):
                 t[i,j,i_p,j_p] = model.addVar(lb=0, ub=1, vtype=GRB.BINARY,name="t%s%s%s%s"%(i,j,i_p,j_p))
 
+g = {} 
+for j in range(n_gates):
+    g[j+1] = model.addVar(lb=0, ub=1, vtype=GRB.BINARY,name="g%s"%(j+1))  
+
 
     
-model.update()
-#### d = x_{i,j,k,l}
-
-for i in range(1,len(edges)+1):
-    for j in range(1,n_gates+1):
-            for k in range(n_towes+1):
-
-            for l in range(k+1):
-                x[i,j,k,l] = model.addVar(lb=0, ub=1, vtype=GRB.BINARY, name="x%s%s%s%s"%(i,j,k,l))
+ 
             
-    
+model.update()
+
 ###################
 ### CONSTRAINTS ###
 ###################
@@ -118,66 +118,79 @@ for i in range(len(edges)):
     for j in range(len(edges)):
         Transfers[i][j] = edges["Flight %s"%(j+1)][i]
 
+########## Towing constraint ##########
+for i in range(1, len(edges)+1):
+    towLHS = LinExpr()
+    for k in range(n_towes +1):
+        towLHS += y[i,k]
+    model.addConstr(lhs=towLHS, sense=GRB.EQUAL, rhs=1, name='Tow_'+str(i))
+
+
 ########### Creating Flight Constraints #########################
 
-for i in range(len(edges)):
-    flightLHS = LinExpr()
-    for j in range(n_gates):
-        flightLHS += gate_comp[i][j]*x[i+1,j+1]
-    model.addConstr(lhs=flightLHS, sense=GRB.EQUAL, rhs=1, name='Flight_'+str(i+1))
+for i in range(1, len(edges)+1):
+    for k in range(n_towes+1):
+        for l in range(k+1):
+            flightLHS = LinExpr()
+            for j in range(1, n_gates+1):
+                flightLHS += gate_comp[i-1][j-1]*x[i,j,k,l]
+
+            flightLHS += - y[i,k]        
+            model.addConstr(lhs=flightLHS, sense=GRB.EQUAL, rhs=0, name='Flight_'+str(i)+"_Tow"+str(k)+str(l))
 
     
     
 
 ########### Creating Gate Constraints ################
 
-for k in range(len(present_aircraft)):
-    for j in range(n_gates):
-        gateLHS = LinExpr()
-        for i in range(len(edges)):
-            gateLHS += gate_comp[i][j]*present_aircraft[k][i]*x[i+1, j+1]
-        model.addConstr(lhs=gateLHS, sense=GRB.LESS_EQUAL, rhs=1, name='Gate_'+str(j+1)+'T_'+str(k+1))
-        
-        
-########### Creating Transfer Contraints ##############
- 
-for i in range(1, len(edges)+1):
-    for j in range(1, n_gates+1):
-        for i_p in range(1, len(edges)+1):
-            for j_p in range(1, n_gates+1):
-                transLHS = LinExpr()
-                transLHS = x[i,j] + x[i_p,j_p] - t[i,j,i_p,j_p]
-                model.addConstr(lhs=transLHS, sense=GRB.LESS_EQUAL, rhs=1, name='Trans_'+str(i)+str(j)+str(i_p)+str(j_p))
-           
-############ CREATING TOWING CONSTRAINTS ########
-for i in range(1,len(edges)+1):
-    k=edges['#Towes'][i]
+
+for s in range(1,len(present_aircraft)+1):
     for j in range(1,n_gates+1):
-        for l in range(k+1):
-            towLHS = LinExpr()
-            towLHS = d[i,j,k,l] - y[i,k]
-            model.addConstr(lhs=towLHS, sense=GRB.EQUAL,rhs=0,name='Tow'+str(i,j,k,l))
+        for k in range(n_towes+1):
+            for l in range(k+1):
+                gateLHS = LinExpr()
+                for i in range(len(edges)):
+                    gateLHS += gate_comp[i-1][j-1]*present_aircraft[s-1][i-1]*x[i,j,k,l]
+                model.addConstr(lhs=gateLHS, sense=GRB.LESS_EQUAL, rhs=1, name='Gate_'+str(j)+"Tow"+str(k)+str(l)+'T'+str(s))
+        
+        
+# ########### Creating Transfer Contraints ##############
+ 
+# for i in range(1, len(edges)+1):
+#     for j in range(1, n_gates+1):
+#         for i_p in range(1, len(edges)+1):
+#             for j_p in range(1, n_gates+1):
+#                 transLHS = LinExpr()
+#                 transLHS = x[i,j] + x[i_p,j_p] - t[i,j,i_p,j_p]
+#                 model.addConstr(lhs=transLHS, sense=GRB.LESS_EQUAL, rhs=1, name='Trans_'+str(i)+str(j)+str(i_p)+str(j_p))
+           
+# ########### Minimizing number of gates used #####################
+# for j in range(n_gates):
+#     mingateLHS = LinExpr()
+#     for i in range(len(edges)):
+#         mingateLHS += x[i+1,j+1]
+#     mingateLHS += -n_gates*g[j+1]
+#     model.addConstr(lhs=mingateLHS, sense=GRB.LESS_EQUAL, rhs=0, name='GateUsed_'+str(j+1))
 
 
         
-########## Objective Function ###################
+# ########## Objective Function ###################
 
-obj = LinExpr() 
-for i in range(1, len(edges)+1):
-    for j in range(1, n_gates+1):
-        #obj += distance[i-1][j-1]*edges["Passengers"][i-1]*x[i, j]
-        for i_p in range(1, len(edges)+1):
-            for j_p in range(1, n_gates+1):
-                 obj += Transfers[i-1][i_p-1] * (max(distance[:,j-1]) + max(distance[:,j_p-1])) * t[i,j,i_p,j_p]
-
+# obj = LinExpr() 
+# for j in range(1, n_gates+1):
+#     obj += gate_data['gate_cost'][j-1] * g[j]
+#     for i in range(1, len(edges)+1):
+#         obj += distance[i-1][j-1]*edges["Passengers"][i-1]*x[i, j] #minimize total walking distance
+#         for i_p in range(1, len(edges)+1):
+#             for j_p in range(1, n_gates+1):
+#                 #minimize transfer distance
+#                  obj += Transfers[i-1][i_p-1] * (max(distance[:,j-1]) + max(distance[:,j_p-1])) * t[i,j,i_p,j_p]  #minimize transfer distance
 
 model.update()
-model.setObjective(obj,GRB.MINIMIZE)
+# model.setObjective(obj,GRB.MINIMIZE)
 model.update()
 model.write('model_formulation.lp')    
 
 model.optimize()
 endTime   = time.time()
-
-        
       
