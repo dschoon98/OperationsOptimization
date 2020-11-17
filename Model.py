@@ -37,10 +37,10 @@ buffer_time = 0 #min
 
 x = {}
 y = {}
-for i in range(len(edges)+1):
+for i in range(1,len(edges)+1):
     for k in range(n_towes +1):
         y[i,k] = model.addVar(lb=0, ub=1, vtype=GRB.BINARY, name="y%s%s"%(i,k))
-    for j in range(n_gates+1):
+    for j in range(1,n_gates+1):
         for k in range(n_towes +1):
             for l in range(k+1):
                 x[i,j,k,l]=model.addVar(lb=0, ub=1, vtype=GRB.BINARY,name="x%s%s%s%s"%(i,j,k,l))
@@ -149,45 +149,63 @@ for s in range(1,len(present_aircraft)+1):
         for k in range(n_towes+1):
             for l in range(k+1):
                 gateLHS = LinExpr()
-                for i in range(len(edges)):
+                for i in range(1,len(edges)+1):
                     gateLHS += gate_comp[i-1][j-1]*present_aircraft[s-1][i-1]*x[i,j,k,l]
-                model.addConstr(lhs=gateLHS, sense=GRB.LESS_EQUAL, rhs=1, name='Gate_'+str(j)+"Tow"+str(k)+str(l)+'T'+str(s))
+        model.addConstr(lhs=gateLHS, sense=GRB.LESS_EQUAL, rhs=1, name='Gate_'+str(j)+"Tow"+str(k)+str(l)+'T'+str(s))
         
         
 # ########### Creating Transfer Contraints ##############
  
-# for i in range(1, len(edges)+1):
-#     for j in range(1, n_gates+1):
-#         for i_p in range(1, len(edges)+1):
-#             for j_p in range(1, n_gates+1):
-#                 transLHS = LinExpr()
-#                 transLHS = x[i,j] + x[i_p,j_p] - t[i,j,i_p,j_p]
-#                 model.addConstr(lhs=transLHS, sense=GRB.LESS_EQUAL, rhs=1, name='Trans_'+str(i)+str(j)+str(i_p)+str(j_p))
-           
+for i in range(1, len(edges)+1):
+    for j in range(1, n_gates+1):
+        for k in range(n_towes+1):
+            for l in range(k+1):
+                for k_p in range(n_towes+1):
+                    for l_p in range(k_p+1):
+                        for i_p in range(1, len(edges)+1):
+                            for j_p in range(1, n_gates+1):
+                                transLHS = LinExpr()
+                                transLHS = x[i,j,k,l] + x[i_p,j_p,k_p,l_p] - t[i,j,i_p,j_p]
+                                model.addConstr(lhs=transLHS, sense=GRB.LESS_EQUAL, rhs=1, name='Trans_'+str(i)+str(j)+str(i_p)+str(j_p))
+                           
 # ########### Minimizing number of gates used #####################
-# for j in range(n_gates):
-#     mingateLHS = LinExpr()
-#     for i in range(len(edges)):
-#         mingateLHS += x[i+1,j+1]
-#     mingateLHS += -n_gates*g[j+1]
-#     model.addConstr(lhs=mingateLHS, sense=GRB.LESS_EQUAL, rhs=0, name='GateUsed_'+str(j+1))
-
+for j in range(1,n_gates+1):
+    mingateLHS = LinExpr()
+    for i in range(1,len(edges)+1):
+        for k in range(n_towes+1):
+            for l in range(k+1):
+                mingateLHS += x[i,j,k,l]
+    mingateLHS += -n_gates*10*g[j]
+    model.addConstr(lhs=mingateLHS, sense=GRB.LESS_EQUAL, rhs=0, name='GateUsed_'+str(j))
+        
 
         
 # ########## Objective Function ###################
 
-# obj = LinExpr() 
-# for j in range(1, n_gates+1):
-#     obj += gate_data['gate_cost'][j-1] * g[j]
-#     for i in range(1, len(edges)+1):
-#         obj += distance[i-1][j-1]*edges["Passengers"][i-1]*x[i, j] #minimize total walking distance
-#         for i_p in range(1, len(edges)+1):
-#             for j_p in range(1, n_gates+1):
-#                 #minimize transfer distance
-#                  obj += Transfers[i-1][i_p-1] * (max(distance[:,j-1]) + max(distance[:,j_p-1])) * t[i,j,i_p,j_p]  #minimize transfer distance
+
+obj = LinExpr() 
+for i in range(1,len(edges)+1):
+    for k in range(n_towes+1):
+        towing_cost = edges["Tow %s"%(k)][i-1]        
+        obj += towing_cost*y[i,k]
+for j in range(1, n_gates+1):
+    obj += gate_data['gate_cost'][j-1] * g[j]
+    for i in range(1, len(edges)+1):
+        for k in range(n_towes+1):
+            for l in range(k+1):
+                towing_cost = edges["Tow %s"%(k)][i-1]
+                if j==6 and not(k==2 and l==1): 
+                    obj += x[i,j,k,l]*1000000
+                    
+                if k==0 
+                obj += distance[i-1][j-1]*towing_cost*edges["Passengers"][i-1]*x[i, j,k,l] #minimize total walking distance * passengers
+        # for i_p in range(1, len(edges)+1):
+        #     for j_p in range(1, n_gates+1):
+        #           #minimize transfer distance
+        #           obj += Transfers[i-1][i_p-1] * (max(distance[:,j-1]) + max(distance[:,j_p-1])) * t[i,j,i_p,j_p]  #minimize transfer distance * passengers
 
 model.update()
-# model.setObjective(obj,GRB.MINIMIZE)
+model.setObjective(obj,GRB.MINIMIZE)
 model.update()
 model.write('model_formulation.lp')    
 
