@@ -164,10 +164,9 @@ for s in range(1,len(present_aircraft)+1):
         for i in range(1,len(edges)+1):
             for k in range(n_towes+1):
                 for l in range(k+1):
-                    if i==s:
-                        l==0 
-                        
-                    gateLHS += gate_comp[i-1][j-1]*present_aircraft[s-1][i-1]*x[i,j,k,l]
+                    if i==s and l==0:
+                        gateLHS += gate_comp[i-1][j-1]*present_aircraft[s-1][i-1]*x[i,j,k,l]
+                    if 
         model.addConstr(lhs=gateLHS, sense=GRB.LESS_EQUAL, rhs=1, name='Gate_'+str(j)+'T'+str(s))
 
 # ########### Creating Transfer Contraints ##############
@@ -185,7 +184,7 @@ for i in range(1, len(edges)+1):
                                 model.addConstr(lhs=transLHS, sense=GRB.LESS_EQUAL, rhs=1, name='Trans_'+str(i)+str(j)+str(i_p)+str(j_p))
                            
 
-# ########### Minimizing number of gates used #####################
+############ Minimizing number of gates used #####################
 for j in range(1,n_gates+1):
     mingateLHS = LinExpr()
     for i in range(1,len(edges)+1):
