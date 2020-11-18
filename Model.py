@@ -144,16 +144,25 @@ for i in range(1, len(edges)+1):
 ########### Creating Gate Constraints ################
 
 
+# for s in range(1,len(present_aircraft)+1):
+#     for j in range(1,n_gates+1):
+#         for k in range(n_towes+1):
+#             for l in range(k+1):
+#                 gateLHS = LinExpr()
+#                 for i in range(1,len(edges)+1):
+#                     gateLHS += gate_comp[i-1][j-1]*present_aircraft[s-1][i-1]*x[i,j,k,l]
+#                 model.addConstr(lhs=gateLHS, sense=GRB.LESS_EQUAL, rhs=1, name='Gate_'+str(j)+"Tow"+str(k)+str(l)+'T'+str(s))
+        
 for s in range(1,len(present_aircraft)+1):
+    
     for j in range(1,n_gates+1):
-        for k in range(n_towes+1):
-            for l in range(k+1):
-                gateLHS = LinExpr()
-                for i in range(1,len(edges)+1):
+        gateLHS = LinExpr()
+        for i in range(1,len(edges)+1):
+            for k in range(n_towes+1):
+                for l in range(k+1):
                     gateLHS += gate_comp[i-1][j-1]*present_aircraft[s-1][i-1]*x[i,j,k,l]
-                model.addConstr(lhs=gateLHS, sense=GRB.LESS_EQUAL, rhs=1, name='Gate_'+str(j)+"Tow"+str(k)+str(l)+'T'+str(s))
-        
-        
+        model.addConstr(lhs=gateLHS, sense=GRB.LESS_EQUAL, rhs=1, name='Gate_'+str(j)+'T'+str(s))
+
 # ########### Creating Transfer Contraints ##############
  
 for i in range(1, len(edges)+1):
@@ -190,22 +199,20 @@ for i in range(1,len(edges)+1):
         towing_cost = edges["Tow %s"%(k)][i-1]        
         obj += towing_cost*y[i,k]
 for j in range(1, n_gates+1):
-    obj += gate_data['gate_cost'][j-1] * g[j]
+    #obj += gate_data['gate_cost'][j-1] * g[j]
     for i in range(1, len(edges)+1):
         for k in range(n_towes+1):
             for l in range(k+1):
                 towing_cost = edges["Tow %s"%(k)][i-1]
-                if j==6 and not(k==2 and l==1): 
-                    obj += x[i,j,k,l]*1000000
-                    
+                if j==6 and not(k==2 and l==1):    #Prevents arriving or departing at storage gate
+                    obj += x[i,j,k,l]*1000000 
                 if k == 0:
-                    added_gate_cost = 50000
-                    print(added_gate_cost*x[i,j,k,l])
+                    added_gate_cost = 3
                 if k != 0 and l == 0:
-                    added_gate_cost = 1
+                    added_gate_cost = 1                    
                 if k != 0 and l != 0:
                     added_gate_cost = 2
-                obj += distance[i-1][j-1]*towing_cost*added_gate_cost*edges["Passengers"][i-1]*x[i, j,k,l] #minimize total walking distance * passengers
+                obj += distance[i-1][j-1]*added_gate_cost*edges["Passengers"][i-1]*x[i, j,k,l] #minimize total walking distance * passengers
         # for i_p in range(1, len(edges)+1):
         #     for j_p in range(1, n_gates+1):
         #           #minimize transfer distance
