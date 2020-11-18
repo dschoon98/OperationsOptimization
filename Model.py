@@ -31,12 +31,12 @@ gate_data = pd.read_excel(os.path.join(cwd,instance_name),sheet_name='Gates')
 
 
 n_gates = len(gate_data['Gates']) #number of gates
-n_towes = 2
+n_towes = 2  # amount of times a flight can be towed
 buffer_time = 0 #min
 
 
-x = {}
-y = {}
+x = {}   # x_{i,j,k,l} = variable for each {flight==i, gate it is currently at==j, amount of times it can be towed==k, amount of times it has been towed==l}
+y = {}   # towing variables y_{i,k}
 for i in range(1,len(edges)+1):
     for k in range(n_towes +1):
         y[i,k] = model.addVar(lb=0, ub=1, vtype=GRB.BINARY, name="y%s%s"%(i,k))
@@ -45,16 +45,16 @@ for i in range(1,len(edges)+1):
             for l in range(k+1):
                 x[i,j,k,l]=model.addVar(lb=0, ub=1, vtype=GRB.BINARY,name="x%s%s%s%s"%(i,j,k,l))
         
-t = {}        
+t = {}        # = t_{i,j,i',j'} = transfer between flight i at gate j to flight i' at gate j'
 for i in range(1, len(edges)+1):
     for j in range(1, n_gates+1):
         for i_p in range(1, len(edges)+1):
             for j_p in range(1, n_gates+1):
                 t[i,j,i_p,j_p] = model.addVar(lb=0, ub=1, vtype=GRB.BINARY,name="t%s%s%s%s"%(i,j,i_p,j_p))
 
-g = {} 
-for j in range(n_gates):
-    g[j+1] = model.addVar(lb=0, ub=1, vtype=GRB.BINARY,name="g%s"%(j+1))  
+g = {}   #Here we make variables for 
+for j in range(1,n_gates+1):
+    g[j] = model.addVar(lb=0, ub=1, vtype=GRB.BINARY,name="g%s"%(j))  
 
 
     
@@ -91,32 +91,36 @@ for i in range(len(edges)):
         dep = dep.replace(dep.hour, dep.minute+buffer_time)
     dep_time[i] = dep
 
-
+###### Making a time-slot for each time an aircraft arrives and departs ####
 for i in range(0, len(edges)):
     Check_dep = list(map(int,arr_time[i]<dep_time))
     Check_arr = list(map(int,arr_time[i]>=arr_time))
-    Check_timeslot = np.array(Check_arr)*np.array(Check_dep)
+    Check_timeslot = np.array(Check_arr)*np.array(Check_dep)  
     present_aircraft.append(Check_timeslot)
     
-    
-    
-########## Creating Gate Compatability and Cost Matrix ##############
-
-gate_comp = np.zeros((len(edges), n_gates))
-distance = np.zeros((len(edges), n_gates))
-
 for i in range(0, len(edges)):
-    for j in range(0, n_gates):
-        distance[i][j] = edges["Gate %s"%(j+1)][i]
-        if edges["Gate %s"%(j+1)][i] != 0:
-            gate_comp[i][j] = 1
+    Check_dep2 = list(map(int,dep_time[i]>=arr_time))
+    Check_arr2 = list(map(int,dep_time[i]<dep_time))
+    Check_timeslot2 = np.array(Check_arr2)*np.array(Check_dep2)
+    present_aircraft.append(Check_timeslot2)
+    
+########## Creating Gate Compatability and Distance Matrix ##############
+
+gate_comp = np.zeros((len(edges), n_gates))   #Making dummy array for gate compatibility values
+distance = np.zeros((len(edges), n_gates))     #Making dummy array for distance values
+
+for i in range(1, len(edges)+1):
+    for j in range(1, n_gates+1):
+        distance[i-1][j-1] = edges["Gate %s"%(j)][i-1] #distance is defined as the distance from a certain gate to the terminal
+        if edges["Gate %s"%(j)][i-1] != 0:
+            gate_comp[i-1][j-1] = 1
             
- ##############  Creating transfer matrix    #####################       
+##############  Creating transfer matrix    #####################       
         
-Transfers = np.zeros((len(edges), len(edges)))
-for i in range(len(edges)):
-    for j in range(len(edges)):
-        Transfers[i][j] = edges["Flight %s"%(j+1)][i]
+Transfers = np.zeros((len(edges), len(edges)))  #Making dummy array for transfer matrix
+for i in range(1,len(edges)+1):
+    for j in range(1,len(edges)+1):
+        Transfers[i-1][j-1] = edges["Flight %s"%(j)][i-1]
 
 ########## Towing constraint ##########
 for i in range(1, len(edges)+1):
@@ -160,6 +164,9 @@ for s in range(1,len(present_aircraft)+1):
         for i in range(1,len(edges)+1):
             for k in range(n_towes+1):
                 for l in range(k+1):
+                    if i==s:
+                        l==0 
+                        
                     gateLHS += gate_comp[i-1][j-1]*present_aircraft[s-1][i-1]*x[i,j,k,l]
         model.addConstr(lhs=gateLHS, sense=GRB.LESS_EQUAL, rhs=1, name='Gate_'+str(j)+'T'+str(s))
 
@@ -208,10 +215,14 @@ for j in range(1, n_gates+1):
                     obj += x[i,j,k,l]*1000000 
                 if k == 0:
                     added_gate_cost = 3
-                if k != 0 and l == 0:
-                    added_gate_cost = 1                    
-                if k != 0 and l != 0:
-                    added_gate_cost = 2
+                else:
+                    if l==0:
+                        added_gate_cost = 1
+                    else:
+                        added_gate_cost = 2
+                        if k==2 and l==1:
+                            added_gate_cost = 0
+                        
                 obj += distance[i-1][j-1]*added_gate_cost*edges["Passengers"][i-1]*x[i, j,k,l] #minimize total walking distance * passengers
         # for i_p in range(1, len(edges)+1):
         #     for j_p in range(1, n_gates+1):
