@@ -71,6 +71,7 @@ model.update()
 
 Timeslots = list(range(1, len(edges)))
 present_aircraft =[]
+Subset = []
 arr_time = edges['arr_time']
 dep_time = edges['dep_time']
 
@@ -91,16 +92,17 @@ for i in range(len(edges)):
         dep = dep.replace(dep.hour, dep.minute+buffer_time)
     dep_time[i] = dep
 
-###### Making a time-slot for each time an aircraft arrives and departs ####
+###### Making a time-slot for each time an aircraft arrives ####
 for i in range(0, len(edges)):
     Check_dep = list(map(int,arr_time[i]<dep_time))
     Check_arr = list(map(int,arr_time[i]>=arr_time))
     Check_timeslot = np.array(Check_arr)*np.array(Check_dep)  
-    present_aircraft.append(Check_timeslot)
-    
+    present_aircraft.append(Check_timeslot)                 
+            
+###### Making a time-slot for each time an aircraft departs ####
 for i in range(0, len(edges)):
     Check_dep2 = list(map(int,dep_time[i]>=arr_time))
-    Check_arr2 = list(map(int,dep_time[i]<dep_time))
+    Check_arr2 = list(map(int,dep_time[i]<=dep_time))
     Check_timeslot2 = np.array(Check_arr2)*np.array(Check_dep2)
     present_aircraft.append(Check_timeslot2)
     
@@ -165,8 +167,18 @@ for s in range(1,len(present_aircraft)+1):
             for k in range(n_towes+1):
                 for l in range(k+1):
                     #if i==s and l==0:
-                    gateLHS += gate_comp[i-1][j-1]*present_aircraft[s-1][i-1]*x[i,j,k,l]
-                    #if 
+                    if s <= len(edges): #arriving timeslots
+                        if i == s and l ==0:
+                            gateLHS += gate_comp[i-1][j-1]*present_aircraft[s-1][i-1]*x[i,j,k,l]
+                        if i != s and l != 2 and not(k!= 0 and l == 0):
+                            gateLHS += gate_comp[i-1][j-1]*present_aircraft[s-1][i-1]*x[i,j,k,l]
+                            
+                    if s > len(edges): # departing timeslots 
+                        if i == s and k == l:
+                            gateLHS += gate_comp[i-1][j-1]*present_aircraft[s-1][i-1]*x[i,j,k,l]                                            
+                        if i != s and l != 2 and not(k!= 0 and l == 0):
+                            gateLHS += gate_comp[i-1][j-1]*present_aircraft[s-1][i-1]*x[i,j,k,l]
+                     
         model.addConstr(lhs=gateLHS, sense=GRB.LESS_EQUAL, rhs=1, name='Gate_'+str(j)+'T'+str(s))
 
 # ########### Creating Transfer Contraints ##############
@@ -210,8 +222,8 @@ for j in range(1, n_gates+1):
         for k in range(n_towes+1):
             for l in range(k+1):
                 towing_cost = edges["Tow %s"%(k)][i-1]
-                if j==6 and not(k==2 and l==1):    #Prevents arriving or departing at storage gate
-                    obj += x[i,j,k,l]*1000000 
+                # if j==6 and not(k==2 and l==1):    #Prevents arriving or departing at storage gate
+                # obj += x[i,j,k,l]*1000000 
                 if k == 0:
                     added_gate_cost = 3
                 else:
