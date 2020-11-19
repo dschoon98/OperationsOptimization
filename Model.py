@@ -17,7 +17,7 @@ cwd = os.getcwd()
 full_list           = os.listdir(cwd)
 
 # instance name
-instance_name = 'dataset_test.xlsx'
+instance_name = 'dataset.xlsx'
 startTimeSetUp = time.time()
 model = Model()
 
@@ -217,7 +217,7 @@ for i in range(1,len(edges)+1):
         towing_cost = edges["Tow %s"%(k)][i-1]        
         obj += towing_cost*y[i,k]
 for j in range(1, n_gates+1):
-    obj += gate_data['gate_cost'][j-1] * g[j]
+    #obj += gate_data['gate_cost'][j-1] * g[j]
     for i in range(1, len(edges)+1):
         for k in range(n_towes+1):
             for l in range(k+1):
@@ -247,24 +247,3 @@ model.write('model_formulation.lp')
 
 model.optimize()
 endTime   = time.time()
-
-
-
-################## Visualizing the result ##########################
-
-result = np.zeros((len(edges), 5))
-
-# for i in range(1, len(edges)+1):
-#     for j in range(1, n_gates+1):
-#         for k in range(n_towes+1):
-#             for l in range(k+1):
-#                 if x[i,j,k,l] == 1:
-#                     results[i][0] = i
-
-
-
-
-
-
-
-
