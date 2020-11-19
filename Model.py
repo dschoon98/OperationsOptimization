@@ -17,7 +17,7 @@ cwd = os.getcwd()
 full_list           = os.listdir(cwd)
 
 # instance name
-instance_name = 'dataset_test.xlsx'
+instance_name = 'dataset.xlsx'
 startTimeSetUp = time.time()
 model = Model()
 
@@ -32,7 +32,7 @@ gate_data = pd.read_excel(os.path.join(cwd,instance_name),sheet_name='Gates')
 
 n_gates = len(gate_data['Gates']) #number of gates
 n_towes = 2  # amount of times a flight can be towed
-buffer_time = 0 #min
+buffer_time = 20 #min
 
 
 x = {}   # x_{i,j,k,l} = variable for each {flight==i, gate it is currently at==j, amount of times it can be towed==k, amount of times it has been towed==l}
@@ -53,8 +53,10 @@ for i in range(1, len(edges)+1):
                 t[i,j,i_p,j_p] = model.addVar(lb=0, ub=1, vtype=GRB.BINARY,name="t%s%s%s%s"%(i,j,i_p,j_p))
 
 g = {}   #Here we make variables for 
+rg = {}
 for j in range(1,n_gates+1):
-    g[j] = model.addVar(lb=0, ub=1, vtype=GRB.BINARY,name="g%s"%(j))  
+    g[j] = model.addVar(lb=0, ub=1, vtype=GRB.BINARY,name="g%s"%(j))
+    rg[j] = model.addVar(lb=0, ub=1, vtype=GRB.BINARY,name="rg%s"%(j)) 
 
 
     
@@ -148,16 +150,6 @@ for i in range(1, len(edges)+1):
     
 
 ########### Creating Gate Constraints ################
-
-
-# for s in range(1,len(present_aircraft)+1):
-#     for j in range(1,n_gates+1):
-#         for k in range(n_towes+1):
-#             for l in range(k+1):
-#                 gateLHS = LinExpr()
-#                 for i in range(1,len(edges)+1):
-#                     gateLHS += gate_comp[i-1][j-1]*present_aircraft[s-1][i-1]*x[i,j,k,l]
-#                 model.addConstr(lhs=gateLHS, sense=GRB.LESS_EQUAL, rhs=1, name='Gate_'+str(j)+"Tow"+str(k)+str(l)+'T'+str(s))
         
 for s in range(1,len(present_aircraft)+1):
     
@@ -199,12 +191,18 @@ for i in range(1, len(edges)+1):
 ############ Minimizing number of gates used #####################
 for j in range(1,n_gates+1):
     mingateLHS = LinExpr()
+    minrgateLHS = LinExpr()
     for i in range(1,len(edges)+1):
         for k in range(n_towes+1):
             for l in range(k+1):
-                mingateLHS += x[i,j,k,l]
+                if not(k == 2 and l == 1):
+                    mingateLHS += x[i,j,k,l]
+                else:
+                    minrgateLHS += x[i,j,k,l]
     mingateLHS += -n_gates*10*g[j]
+    minrgateLHS += -n_gates*10*rg[j]
     model.addConstr(lhs=mingateLHS, sense=GRB.LESS_EQUAL, rhs=0, name='GateUsed_'+str(j))
+    model.addConstr(lhs=minrgateLHS, sense=GRB.LESS_EQUAL, rhs=0, name='RemoteGateUsed_'+str(j))
         
 
         
@@ -218,12 +216,11 @@ for i in range(1,len(edges)+1):
         obj += towing_cost*y[i,k]
 for j in range(1, n_gates+1):
     obj += gate_data['gate_cost'][j-1] * g[j]
+    obj += gate_data['gate_cost'][j-1] * rg[j]
     for i in range(1, len(edges)+1):
         for k in range(n_towes+1):
             for l in range(k+1):
                 towing_cost = edges["Tow %s"%(k)][i-1]
-                # if j==6 and not(k==2 and l==1):    #Prevents arriving or departing at storage gate
-                # obj += x[i,j,k,l]*1000000 
                 if k == 0:
                     added_gate_cost = 3
                 else:
@@ -252,14 +249,34 @@ endTime   = time.time()
 
 ################## Visualizing the result ##########################
 
+gates_used = 0
+
+for i in range(len(g)):
+    if g[i+1].X == 1:
+        gates_used += 1
+        
+remote_used = 0
+
+for i in range(len(g)):
+    if rg[i+1].X == 1:
+        remote_used += 1
+
 result = np.zeros((len(edges), 5))
 
-# for i in range(1, len(edges)+1):
-#     for j in range(1, n_gates+1):
-#         for k in range(n_towes+1):
-#             for l in range(k+1):
-#                 if x[i,j,k,l] == 1:
-#                     results[i][0] = i
+for i in range(1, len(edges)+1):
+    for j in range(1, n_gates+1):
+        for k in range(n_towes+1):
+            for l in range(k+1):
+                if x[i,j,k,l].X == 1:
+                    result[i-1][0] = i
+                    result[i-1][1] = k
+                    if l == 0:
+                        result[i-1][2] = j
+                    if l == 1:
+                        result[i-1][3] = j
+                    if l == 2:
+                        result[i-1][4] = j
+       
 
 
 
