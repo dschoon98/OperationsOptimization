@@ -174,9 +174,9 @@ for s in range(1,len(present_aircraft)+1):
                             gateLHS += gate_comp[i-1][j-1]*present_aircraft[s-1][i-1]*x[i,j,k,l]
                             
                     if s > len(edges): # departing timeslots 
-                        if i == s and k == l:
+                        if i == s-len(edges) and k == l:
                             gateLHS += gate_comp[i-1][j-1]*present_aircraft[s-1][i-1]*x[i,j,k,l]                                            
-                        if i != s and l != 2 and not(k!= 0 and l == 0):
+                        if i != s-len(edges) and l != 2 and not(k!= 0 and l == 0):
                             gateLHS += gate_comp[i-1][j-1]*present_aircraft[s-1][i-1]*x[i,j,k,l]
                      
         model.addConstr(lhs=gateLHS, sense=GRB.LESS_EQUAL, rhs=1, name='Gate_'+str(j)+'T'+str(s))
