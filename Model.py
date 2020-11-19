@@ -95,10 +95,14 @@ for i in range(len(edges)):
 for i in range(0, len(edges)):
     Check_dep = list(map(int,arr_time[i]<dep_time))
     Check_arr = list(map(int,arr_time[i]>=arr_time))
-    Check_timeslot = np.array(Check_arr)*np.array(Check_dep)
+    Check_timeslot = np.array(Check_arr)*np.array(Check_dep)  
     present_aircraft.append(Check_timeslot)
     
-    
+for i in range(0, len(edges)):
+    Check_dep2 = list(map(int,dep_time[i]>=arr_time))
+    Check_arr2 = list(map(int,dep_time[i]<dep_time))
+    Check_timeslot2 = np.array(Check_arr2)*np.array(Check_dep2)
+    present_aircraft.append(Check_timeslot2)
     
 ########## Creating Gate Compatability and Cost Matrix ##############
 
@@ -153,8 +157,7 @@ for i in range(1, len(edges)+1):
 #                     gateLHS += gate_comp[i-1][j-1]*present_aircraft[s-1][i-1]*x[i,j,k,l]
 #                 model.addConstr(lhs=gateLHS, sense=GRB.LESS_EQUAL, rhs=1, name='Gate_'+str(j)+"Tow"+str(k)+str(l)+'T'+str(s))
         
-for s in range(1,len(present_aircraft)+1):
-    
+for s in range(1,len(present_aircraft)+1):    
     for j in range(1,n_gates+1):
         gateLHS = LinExpr()
         for i in range(1,len(edges)+1):
