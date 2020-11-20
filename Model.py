@@ -277,11 +277,3 @@ for i in range(1, len(edges)+1):
                     if l == 2:
                         result[i-1][4] = j
        
-
-
-
-
-
-
-
-
