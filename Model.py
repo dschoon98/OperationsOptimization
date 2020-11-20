@@ -32,7 +32,7 @@ gate_data = pd.read_excel(os.path.join(cwd,instance_name),sheet_name='Gates')
 
 n_gates = len(gate_data['Gates']) #number of gates
 n_towes = 2  # amount of times a flight can be towed
-buffer_time = 20 #min
+buffer_time = 0 #min
 
 
 x = {}   # x_{i,j,k,l} = variable for each {flight==i, gate it is currently at==j, amount of times it can be towed==k, amount of times it has been towed==l}
@@ -276,4 +276,21 @@ for i in range(1, len(edges)+1):
                         result[i-1][3] = j
                     if l == 2:
                         result[i-1][4] = j
+                        
+import csv
+with open('eggs.csv', 'w', newline='') as csvfile:
+    spamwriter = csv.writer(csvfile, delimiter=' ',
+                            quotechar='|', quoting=csv.QUOTE_MINIMAL)
+    # spamwriter.writerow(['Spam'] * 5 + ['Baked Beans'])
+    # spamwriter.writerow(['Spam', 'Lovely Spam', 'Wonderful Spam'])
+    for i in range(len(result)):
+        spamwriter.writerow(result[i])
        
+
+
+
+
+
+
+
+
